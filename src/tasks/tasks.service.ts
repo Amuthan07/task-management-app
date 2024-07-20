@@ -1,62 +1,68 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { Task } from './task.entity';
-import { randomUUID } from 'crypto';
+import { Task, TaskDocument } from './task.model';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class TasksService {
-  private tasks: Task[] = [];
+  constructor(
+    @InjectModel(Task.name) private readonly taskModel: Model<TaskDocument>,
+  ) {}
 
-  createTask(
+  async createTask(
     title: string,
     description: string,
     status: string,
-    dueDate: string,
-  ): Task {
-    const task: Task = {
-      id: randomUUID(),
+    dueDate: Date,
+  ): Promise<Task> {
+    const newTask = await new this.taskModel({
       title,
       description,
       status,
       dueDate,
-    };
-    this.tasks.push(task);
-    return task;
+    });
+    console.log(newTask);
+    return newTask.save();
   }
 
-  getAllTasks(): Task[] {
-    return this.tasks;
+  async getAllTasks(): Promise<Task[]> {
+    return await this.taskModel.find();
   }
 
-  getTaskById(id: string): Task {
-    const task = this.tasks.find((task) => task.id === id);
+  async getTaskById(id: string): Promise<Task> {
+    const task = await this.taskModel.findById(id);
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} is not found`);
     }
     return task;
   }
 
-  updateTask(
+  async updateTask(
     id: string,
     title: string,
     description: string,
     status: string,
-    dueDate: string,
-  ): Task {
-    const task = this.getTaskById(id);
-    task.title = title;
-    task.description = description;
-    task.status = status;
-    task.dueDate = dueDate;
-    return task;
-  }
-
-  deleteTask(id: string): Task[] {
-    const taskIndex = this.tasks.findIndex((task) => task.id === id);
-    if (taskIndex === -1) {
+    dueDate: Date,
+  ): Promise<Task> {
+    const updatedTask = await this.taskModel
+      .findByIdAndUpdate(
+        id,
+        { title, description, status, dueDate },
+        { new: true },
+      )
+      .exec();
+    if (!updatedTask) {
       throw new NotFoundException(`Task with ID ${id} is not found`);
     }
-    this.tasks.splice(taskIndex, 1);
-    return this.tasks;
+    return updatedTask;
+  }
+
+  async deleteTask(id: string): Promise<Task> {
+    const deletedTask = await this.taskModel.findByIdAndDelete(id).exec();
+    if (!deletedTask) {
+      throw new NotFoundException(`Task with ID ${id} is not found`);
+    }
+    return deletedTask;
   }
 }

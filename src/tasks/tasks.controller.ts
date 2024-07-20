@@ -9,39 +9,39 @@ import {
 } from '@nestjs/common';
 
 import { TasksService } from './tasks.service';
-import { Task } from './task.entity';
+import { Task } from './task.model';
 import { RouteConstants } from '../constants/route-constants';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
   @Post(RouteConstants.CREATE_TASK)
-  createTask(
+  async createTask(
     @Body('title') title: string,
     @Body('description') description: string,
     @Body('status') status: string,
-    @Body('dueDate') dueDate: string,
-  ): Task {
+    @Body('dueDate') dueDate: Date,
+  ): Promise<Task> {
     return this.tasksService.createTask(title, description, status, dueDate);
   }
   @Get(RouteConstants.GET_ALL_TASKS)
-  getAllTasks(): Task[] {
+  async getAllTasks(): Promise<Task[]> {
     return this.tasksService.getAllTasks();
   }
 
   @Get(RouteConstants.GET_TASK_BY_ID)
-  getTasksbyId(@Param('id') id: string): Task {
+  async getTasksbyId(@Param('id') id: string): Promise<Task> {
     return this.tasksService.getTaskById(id);
   }
 
   @Put(RouteConstants.UPDATE_TASK)
-  updateTask(
+  async updateTask(
     @Param('id') id: string,
     @Body('title') title: string,
     @Body('description') description: string,
     @Body('status') status: string,
-    @Body('dueDate') dueDate: string,
-  ): Task {
+    @Body('dueDate') dueDate: Date,
+  ): Promise<Task> {
     return this.tasksService.updateTask(
       id,
       title,
@@ -52,7 +52,7 @@ export class TasksController {
   }
 
   @Delete(RouteConstants.DELETE_TASK)
-  deleteTask(@Param('id') id: string): Task[] {
+  async deleteTask(@Param('id') id: string): Promise<Task> {
     return this.tasksService.deleteTask(id);
   }
 }
